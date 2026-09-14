@@ -6,10 +6,26 @@ This page is a compact checklist for running the project locally and diagnosing 
 
 1. Copy the example environment file and fill in the required values.
 2. Start the backend from the repository root.
-3. Start the frontend in a second terminal.
+3. Start the frontend in a second terminal when using frontend HMR.
 4. Open the local frontend URL in a browser.
 
-Use the exact commands from the main `README.md` for the selected setup path (Docker or manual installation).
+### Recommended local development flow
+
+```bash
+uv sync
+cd frontend && pnpm install && pnpm build && cd ..
+uv run analytics-agent bootstrap
+uv run uvicorn analytics_agent.main:app --port 8100
+```
+
+For frontend hot reload, use a second terminal:
+
+```bash
+cd frontend
+pnpm dev
+```
+
+The exact commands in the main `README.md` remain the source of truth for Docker and packaged-install flows.
 
 ## Minimum configuration checklist
 
@@ -21,16 +37,28 @@ Use the exact commands from the main `README.md` for the selected setup path (Do
 
 ## First verification steps
 
-- Confirm the backend process starts without import errors.
-- Call the health endpoint and verify a successful response.
-- Open the UI and submit a simple natural-language question.
-- Check backend logs if the UI is blank or the request fails.
+Run these checks before debugging the UI:
+
+```bash
+# Confirm the service is listening
+curl -i http://localhost:8100/
+
+# Verify DataHub connectivity when configured
+curl -s -X POST http://localhost:8100/api/settings/connections/datahub/test
+```
+
+Then:
+
+- confirm the backend process starts without import errors;
+- open the UI and submit a simple natural-language question;
+- check backend logs if the UI is blank or the request fails.
 
 ## Common symptoms
 
 | Symptom | First thing to check |
 | --- | --- |
-| Backend exits immediately | Environment variables and Python dependencies |
+| Backend exits immediately | Environment variables, migration/bootstrap step, and Python dependencies |
+| Root URL returns an error | Backend port, startup logs, and whether the service is fully initialized |
 | LLM request fails | Provider, model name, API key, and network access |
 | Metadata lookup fails | DataHub URL, token, and service availability |
 | SQL query fails | Database URL, credentials, and schema/table names |
